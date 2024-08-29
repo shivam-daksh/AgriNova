@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Container,
   Grid,
@@ -7,9 +7,41 @@ import {
   Card,
   CardContent,
 } from "@mui/material";
+import ReconnectingWebSocket from "reconnecting-websocket";
 
 const BLYNK_TOKEN = "FlzZ9b7m3MML40odKxvBECh6UPURMVg6";
 const BLYNK_BASE_URL = `https://blr1.blynk.cloud/external/api`;
+const WEBSOCKET_URL = "ws://blynk-cloud.com:8080/websockets";
+
+// Function to get the last sensor data from the Blynk server
+//https://blr1.blynk.cloud/external/api/get?token=FlzZ9b7m3MML40odKxvBECh6UPURMVg6&v3
+async function getSensorData(pin = "v3") {
+  try {
+    const response = await fetch(`
+      ${BLYNK_BASE_URL}/get?token=${BLYNK_TOKEN}&${pin}
+    `);
+    const data = await response.json();
+    console.log("Sensor Data:", data);
+    return data;
+  } catch (error) {
+    console.error("Error fetching sensor data:", error);
+  }
+}
+async function updateData(pin = "v3", value) {
+  try {
+    const response = await fetch(`
+      ${BLYNK_BASE_URL}/update?token=${BLYNK_TOKEN}&${pin}= ${value}
+    `);
+    console.log(response);
+    const data = await response.json();
+    console.log("Sensor Data:", data);
+    return data;
+  } catch (error) {
+    console.error("Error fetching sensor data:", error);
+  }
+}
+getSensorData("v0");
+updateData("v12", 1);
 
 const Dashboard = () => {
   const [temperature, setTemperature] = useState(0);
@@ -17,23 +49,42 @@ const Dashboard = () => {
   const [soilMoisture, setSoilMoisture] = useState(0);
   const [motorState, setMotorState] = useState(false);
   const [switchState, setSwitchState] = useState(false);
+  const [isOnline, setIsOnline] = useState(true);
 
-  // Fetch sensor data
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await fetch(
-          `${BLYNK_BASE_URL}/get?token=${BLYNK_TOKEN}&v0`
-        );
-        const data = await response.json();
-        setTemperature(data[0]); // Assuming v0 is temperature
-        setHumidity(data[1]); // Assuming v1 is humidity
-        setSoilMoisture(data[2]); // Assuming v2 is soil moisture
-      } catch (error) {
-        console.error("Error fetching sensor data:", error);
+    // Fetch the last sensor data on component mount
+    getSensorData().then((data) => {
+      setTemperature(data.temperature || 0);
+      setHumidity(data.humidity || 0);
+      setSoilMoisture(data.soilMoisture || 0);
+    });
+
+    // Initialize WebSocket
+    const socket = new ReconnectingWebSocket(WEBSOCKET_URL);
+
+    // Handle WebSocket events
+    socket.addEventListener("open", () => {
+      setIsOnline(true);
+    });
+
+    socket.addEventListener("close", () => {
+      setIsOnline(false);
+    });
+
+    socket.addEventListener("message", (event) => {
+      const { type, data } = JSON.parse(event.data);
+      if (type === "temperature") {
+        setTemperature(data);
+      } else if (type === "humidity") {
+        setHumidity(data);
+      } else if (type === "soilMoisture") {
+        setSoilMoisture(data);
       }
+    });
+
+    return () => {
+      socket.close(); // Clean up WebSocket connection on component unmount
     };
-    fetchData();
   }, []);
 
   // Function to control motor
@@ -74,7 +125,9 @@ const Dashboard = () => {
           <Card>
             <CardContent>
               <Typography variant="h6">Temperature</Typography>
-              <Typography variant="h4">{temperature}°C</Typography>
+              <Typography variant="h4">
+                {isOnline ? temperature : "Fetching..."}°C
+              </Typography>
             </CardContent>
           </Card>
         </Grid>
@@ -82,7 +135,9 @@ const Dashboard = () => {
           <Card>
             <CardContent>
               <Typography variant="h6">Humidity</Typography>
-              <Typography variant="h4">{humidity}%</Typography>
+              <Typography variant="h4">
+                {isOnline ? humidity : "Fetching..."}%
+              </Typography>
             </CardContent>
           </Card>
         </Grid>
@@ -90,7 +145,9 @@ const Dashboard = () => {
           <Card>
             <CardContent>
               <Typography variant="h6">Soil Moisture</Typography>
-              <Typography variant="h4">{soilMoisture}%</Typography>
+              <Typography variant="h4">
+                {isOnline ? soilMoisture : "Fetching..."}%
+              </Typography>
             </CardContent>
           </Card>
         </Grid>
