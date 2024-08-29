@@ -1,9 +1,11 @@
 import "./App.css";
-import Dashboard from "..";
+import Dashboard from "../Dashboard";
+import Dash from "../Board";
 
 function App() {
   return (
     <>
+      <Dash />
       <Dashboard />
     </>
   );
