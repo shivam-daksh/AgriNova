@@ -88,10 +88,10 @@ const Dashboard = () => {
     try {
       const newState = !motorState;
       setMotorState(newState);
-      const url = `${baseURL}/update?token=${BLYNK_TOKEN}&v1=${
-        newState ? 1 : 0
+      const url = `${baseURL}update?token=${BLYNK_TOKEN}&v12=${
+        !newState ? 1 : 0
       }`;
-      await fetch(url, { method: "GET" });
+      fetch(url, { method: "GET" });
     } catch (error) {
       console.error("Error controlling motor:", error);
     }
@@ -102,8 +102,8 @@ const Dashboard = () => {
     try {
       const newState = !switchState;
       setSwitchState(newState);
-      const url = `${baseURL}/update?token=${BLYNK_TOKEN}&v2=${
-        newState ? 1 : 0
+      const url = `${baseURL}update?token=${BLYNK_TOKEN}&v13=${
+        !newState ? 1 : 0
       }`;
       await fetch(url, { method: "GET" });
     } catch (error) {

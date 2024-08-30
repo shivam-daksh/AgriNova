@@ -5,7 +5,7 @@ import Dash from "../Board";
 function App() {
   return (
     <>
-      <Dash />
+      {/* <Dash /> */}
       <Dashboard />
     </>
   );
