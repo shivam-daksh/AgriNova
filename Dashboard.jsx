@@ -156,7 +156,7 @@ const Dashboard = () => {
         <Grid item xs={12} sm={4}>
           <Card>
             <CardContent>
-              <Typography variant="h6">Soil Moisture</Typography>
+              <Typography variant="h6">Moisture</Typography>
               <Typography variant="h4">
                 {isOnline ? soilMoisture : "Fetching..."}%
               </Typography>
