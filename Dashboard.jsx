@@ -7,41 +7,9 @@ import {
   Card,
   CardContent,
 } from "@mui/material";
-import ReconnectingWebSocket from "reconnecting-websocket";
 
 const BLYNK_TOKEN = "FlzZ9b7m3MML40odKxvBECh6UPURMVg6";
-const BLYNK_BASE_URL = `https://blr1.blynk.cloud/external/api`;
-const WEBSOCKET_URL = "ws://blynk-cloud.com:8080/websockets";
-
-// Function to get the last sensor data from the Blynk server
-//https://blr1.blynk.cloud/external/api/get?token=FlzZ9b7m3MML40odKxvBECh6UPURMVg6&v3
-async function getSensorData(pin = "v3") {
-  try {
-    const response = await fetch(`
-      ${BLYNK_BASE_URL}/get?token=${BLYNK_TOKEN}&${pin}
-    `);
-    const data = await response.json();
-    console.log("Sensor Data:", data);
-    return data;
-  } catch (error) {
-    console.error("Error fetching sensor data:", error);
-  }
-}
-async function updateData(pin = "v3", value) {
-  try {
-    const response = await fetch(`
-      ${BLYNK_BASE_URL}/update?token=${BLYNK_TOKEN}&${pin}= ${value}
-    `);
-    console.log(response);
-    const data = await response.json();
-    console.log("Sensor Data:", data);
-    return data;
-  } catch (error) {
-    console.error("Error fetching sensor data:", error);
-  }
-}
-getSensorData("v0");
-updateData("v12", 1);
+const baseURL = "https://blr1.blynk.cloud/external/api/";
 
 const Dashboard = () => {
   const [temperature, setTemperature] = useState(0);
@@ -51,48 +19,76 @@ const Dashboard = () => {
   const [switchState, setSwitchState] = useState(false);
   const [isOnline, setIsOnline] = useState(true);
 
-  useEffect(() => {
-    // Fetch the last sensor data on component mount
-    getSensorData().then((data) => {
-      setTemperature(data.temperature || 0);
-      setHumidity(data.humidity || 0);
-      setSoilMoisture(data.soilMoisture || 0);
-    });
-
-    // Initialize WebSocket
-    const socket = new ReconnectingWebSocket(WEBSOCKET_URL);
-
-    // Handle WebSocket events
-    socket.addEventListener("open", () => {
-      setIsOnline(true);
-    });
-
-    socket.addEventListener("close", () => {
-      setIsOnline(false);
-    });
-
-    socket.addEventListener("message", (event) => {
-      const { type, data } = JSON.parse(event.data);
-      if (type === "temperature") {
-        setTemperature(data);
-      } else if (type === "humidity") {
-        setHumidity(data);
-      } else if (type === "soilMoisture") {
-        setSoilMoisture(data);
+  async function isHardwareOnline() {
+    try {
+      const response = await fetch(
+        `${baseURL}isHardwareConnected?token=${BLYNK_TOKEN}`
+      );
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
       }
-    });
+      const data = await response.json();
+      console.log("Data received:", data);
+      setIsOnline(data);
+      return data;
+    } catch (error) {
+      console.error("There was a problem with the fetch operation:", error);
+    }
+  }
 
-    return () => {
-      socket.close(); // Clean up WebSocket connection on component unmount
-    };
-  }, []);
+  async function getHumidity() {
+    const pin = "v1";
+    try {
+      const response = await fetch(`${baseURL}get?token=${BLYNK_TOKEN}&${pin}`); // Replace with your API endpoint
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+      const data = await response.json();
+      console.log("Data received:", data);
+      setHumidity(data);
+      return data;
+    } catch (error) {
+      console.error("There was a problem with the fetch operation:", error);
+    }
+  }
 
-  // Function to control motor
+  async function getTemperature() {
+    const pin = "v0";
+    try {
+      const response = await fetch(`${baseURL}get?token=${BLYNK_TOKEN}&${pin}`); // Replace with your API endpoint
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+      const data = await response.json();
+      console.log("Data received:", data);
+      setTemperature(data);
+      return data;
+    } catch (error) {
+      console.error("There was a problem with the fetch operation:", error);
+    }
+  }
+
+  async function getMoisture() {
+    const pin = "v3";
+    try {
+      const response = await fetch(`${baseURL}get?token=${BLYNK_TOKEN}&${pin}`); // Replace with your API endpoint
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
+      }
+      const data = await response.json();
+      console.log("Data received:", data);
+      setSoilMoisture(data);
+      return data;
+    } catch (error) {
+      console.error("There was a problem with the fetch operation:", error);
+    }
+  }
+
   const handleMotorChange = async () => {
     try {
       const newState = !motorState;
       setMotorState(newState);
-      const url = `${BLYNK_BASE_URL}/update?token=${BLYNK_TOKEN}&v1=${
+      const url = `${baseURL}/update?token=${BLYNK_TOKEN}&v1=${
         newState ? 1 : 0
       }`;
       await fetch(url, { method: "GET" });
@@ -106,7 +102,7 @@ const Dashboard = () => {
     try {
       const newState = !switchState;
       setSwitchState(newState);
-      const url = `${BLYNK_BASE_URL}/update?token=${BLYNK_TOKEN}&v2=${
+      const url = `${baseURL}/update?token=${BLYNK_TOKEN}&v2=${
         newState ? 1 : 0
       }`;
       await fetch(url, { method: "GET" });
@@ -114,6 +110,22 @@ const Dashboard = () => {
       console.error("Error controlling switch:", error);
     }
   };
+
+  useEffect(() => {
+    const intervalId1 = setInterval(isHardwareOnline, 100000); // 1000 milliseconds = 1 second
+    const intervalId2 = setInterval(getTemperature, 1000); // 1000 milliseconds = 1 second
+    const intervalId3 = setInterval(getMoisture, 1000); // 1000 milliseconds = 1 second
+    const intervalId4 = setInterval(getHumidity, 1000); // 1000 milliseconds = 1 second
+
+    return () => {
+      clearInterval(intervalId1);
+      clearInterval(intervalId2);
+      clearInterval(intervalId3);
+      clearInterval(intervalId4);
+    };
+  }, []);
+
+  // Function to control motor
 
   return (
     <Container>
