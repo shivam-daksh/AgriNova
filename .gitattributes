@@ -1,0 +1,1 @@
+backend/models/soil_classification_model_for_sih.h5 filter=lfs diff=lfs merge=lfs -text
