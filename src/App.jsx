@@ -7,7 +7,7 @@ function App() {
   return (
     <>
       {/* <Dash /> */}
-      <Dashboard />
+      {/* <Dashboard /> */}
       <br />
       <AIChatAssistant />
     </>
