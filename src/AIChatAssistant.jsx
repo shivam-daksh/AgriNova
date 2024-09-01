@@ -20,7 +20,7 @@ import SettingsIcon from "@mui/icons-material/Settings";
 
 // Your API key and endpoint
 const API_KEY = "AIzaSyC7HoglEhcNUM8j-wec56Lzs9aU3em9wwU";
-const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${API_KEY}`;
+const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${process.env.API_KEY}`;
 function renderAIResponse(responseText) {
   // Utility function to parse and transform the response text
   const parseResponse = (text) => {
