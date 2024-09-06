@@ -1,7 +1,6 @@
 import "./App.css";
-import Dashboard from "../Dashboard";
-import Dash from "../Board";
-import AIChatAssistant from "./AIChatAssistant";
+import Dashboard from "./components/Dashboard";
+import AIChatAssistant from "./components/AIChatAssistant";
 
 function App() {
   return (
